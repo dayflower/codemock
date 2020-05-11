@@ -4,6 +4,16 @@
       b-button.mr-4(to="/")
         font-awesome-icon(:icon="['fas', 'chevron-circle-left']")
     div()
+      b-card.mx-4.my-4(no-body bg-variant="info")
+        b-card-body
+          b-card-title
+            | Wrapper
+            span(v-if="!isCleanWrapper") *
+          VueCodeMirror.editor(
+            :options="cmWrapperOptions" v-model="editingWrapper"
+            @save="saveWrapper" @isCleanUpdated="isCleanUpdatedWrapper"
+            )
+
       b-card.mx-4.my-4(v-for="macro in macros" :key="macro.id" no-body)
         b-card-body
           b-card-title
@@ -45,6 +55,10 @@ interface MacroWithClean extends Macro {
   },
 })
 export default class Setting extends StoreMixin {
+  editingWrapper = '';
+
+  isCleanWrapper = true;
+
   macros: Array<MacroWithClean> = [];
 
   cmOptions = {
@@ -56,6 +70,24 @@ export default class Setting extends StoreMixin {
     smartIndent: true,
     indentWithTabs: false,
   };
+
+  cmWrapperOptions = {
+    theme: 'mbo',
+    mode: 'text/html',
+    lineNumbers: true,
+    tabSize: 2,
+    indentUnit: 2,
+    smartIndent: true,
+    indentWithTabs: false,
+  };
+
+  saveWrapper() {
+    this.store.wrapper = this.editingWrapper;
+  }
+
+  isCleanUpdatedWrapper(isClean: boolean) {
+    this.isCleanWrapper = isClean;
+  }
 
   saveTemplate(templateId: string) {
     const macro = this.macros.find(it => it.id === templateId);
@@ -113,6 +145,8 @@ export default class Setting extends StoreMixin {
   }
 
   mounted() {
+    this.editingWrapper = this.store.wrapper;
+
     this.macros = this.store.macros.map(it => {
       return {
         ...it,

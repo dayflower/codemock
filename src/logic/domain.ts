@@ -15,7 +15,7 @@ const defaultTemplate = `
       }
     </style>
   </head>
-  <body>%s</body>
+  <body>{{body}}</body>
 </html>
 `;
 
@@ -53,11 +53,20 @@ export interface Source {
 }
 
 export class Store {
+  private _wrapper: string;
+
   macros: Array<Macro>;
 
   sources: Array<Source>;
 
   constructor() {
+    const storedWrapper = window.localStorage.getItem('wrapper');
+    if (storedWrapper !== null) {
+      this._wrapper = storedWrapper;
+    } else {
+      this._wrapper = defaultTemplate;
+    }
+
     const storedMacros = window.localStorage.getItem('macros');
     if (storedMacros !== null) {
       this.macros = JSON.parse(storedMacros);
@@ -75,6 +84,19 @@ export class Store {
         return { ...it, source: stripHeadingIndent(it.source) };
       });
     }
+  }
+
+  get wrapper() {
+    return this._wrapper;
+  }
+
+  set wrapper(template: string) {
+    this._wrapper = template;
+    this.syncWrapperToStorage();
+  }
+
+  private syncWrapperToStorage() {
+    window.localStorage.setItem('wrapper', this._wrapper);
   }
 
   private syncMacrosToStorage() {
@@ -181,6 +203,6 @@ export class Store {
     // eslint-disable-next-line no-new-func
     const compiled = new Function(`${code}; return template();`);
 
-    return defaultTemplate.replace('%s', compiled());
+    return this.wrapper.replace('{{body}}', compiled());
   }
 }
